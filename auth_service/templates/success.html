@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Đăng nhập thành công</title>
+</head>
+<body>
+  <h2>Xin chào {{ username }}</h2>
+  <p>Đăng nhập thành công!</p>
+  <p>Token của bạn:</p>
+  <textarea cols="80" rows="4">{{ token }}</textarea>
+
+  <p>
+    <a href="/login">Đăng xuất</a> |
+    <!-- Gửi token và username sang Product Service -->
+    <a href="http://127.0.0.1:5001/?token={{ token }}&username={{ username }}">Trang chủ</a>
+  </p>
+</body>
+</html>
