@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem Sản Phẩm - Shop</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">🛍️ Shop Online</h1>
+            <div class="nav-links">
+                <a href="index.html" class="active">Sản Phẩm</a>
+                <span id="userInfo"></span>
+                <button id="loginBtn" class="btn btn-primary" onclick="window.location.href='login.html'">Đăng Nhập</button>
+                <button id="logoutBtn" class="btn btn-secondary" onclick="logout()" style="display:none;">Đăng Xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>Danh Sách Sản Phẩm</h2>
+            <p>Cửa hàng của chúng tôi có nhiều sản phẩm chất lượng</p>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." onkeyup="filterProducts()">
+        </div>
+
+        <div id="loading" class="loading">Đang tải...</div>
+        <div id="errorMessage" class="error-message" style="display:none;"></div>
+
+        <div id="productsGrid" class="products-grid">
+            <!-- Products will be loaded here -->
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Shop Online. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/user.js"></script>
+</body>
+</html>
+

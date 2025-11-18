@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, session, redirect, url_for
+from flask import Flask, jsonify, request, session
 from pymongo import MongoClient
 from service_registry import register_service
 from models.product_model import *
@@ -87,35 +87,12 @@ def delete_product_route(pid):
     result = reduce_quantity(pid, int(data["amount"]), username)
     return jsonify(result)
 
-# ---------------- WEB GIAO DIỆN ----------------
-@app.route("/")
-def home():
-    # Lấy token và username từ query string
-    token = request.args.get("token")
-    username = request.args.get("username")
-
-    if not token or not username:
-        return "<h3>Thiếu token hoặc username!</h3>", 401
-
-    # Gọi Auth Service để xác thực token
-    auth_url = get_auth_service_url()
-    if not auth_url:
-        return "Không tìm thấy Auth Service!", 500
-
-    response = requests.post(f"{auth_url}/auth/verify", headers={"Authorization": token})
-    result = response.json()
-
-    if not result.get("valid"):
-        return "<h3>Token không hợp lệ hoặc đã hết hạn!</h3>", 401
-
-    # ✅ Lưu username vào session để các API CRUD dùng
-    session["username"] = username
-    products = get_products_by_user(username)
-
-    return render_template("products.html", products=products, username=username)
+# Frontend đã được tách ra thư mục frontend riêng
+# Các routes render template đã được loại bỏ
+# Frontend gọi API trực tiếp qua Nginx Gateway
 
 
 
 if __name__ == "__main__":
     register_service()
-    app.run(port=SERVICE_PORT, debug=True)
+    app.run(host="0.0.0.0", port=SERVICE_PORT, debug=True)

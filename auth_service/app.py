@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, request, jsonify, redirect, url_for, session
 from flask_jwt_extended import JWTManager, create_access_token, decode_token
 from datetime import timedelta
 from models.user_model import create_user, find_user, update_token, check_password
@@ -18,46 +18,44 @@ def health():
     return jsonify({"status": "UP"}), 200
 
 
-# ---------------- Web Giao Diện ----------------
-@app.route("/")
-def home():
-    return redirect(url_for("login_page"))
+# ---------------- API Endpoints ----------------
+# Frontend đã được tách ra thư mục frontend riêng
+# Các routes chỉ trả về JSON, không render template nữa
 
-@app.route("/register", methods=["GET", "POST"])
-def register_page():
-    if request.method == "POST":
-        data = request.get_json() if request.is_json else request.form
-        username = data.get("username")
-        password = data.get("password")
-
-        if find_user(username):
-            return render_template("register.html", msg="Tên đăng nhập đã tồn tại!")
-
-        create_user(username, password)
-        return redirect(url_for("login_page"))
-
-    return render_template("register.html")
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login_page():
-    if request.method == "GET":
-        return render_template("login.html")
-
-    data = request.get_json() if request.is_json else request.form
-    username = data.get("username")
-    password = data.get("password")
+@app.route("/register", methods=["POST"])
+def register():
+    """API đăng ký - chỉ trả về JSON"""
+    data = request.get_json()
+    username = data.get("username") if data else request.form.get("username")
+    password = data.get("password") if data else request.form.get("password")
 
     if not username or not password:
-        return render_template("login.html", msg="Thiếu thông tin đăng nhập!")
+        return jsonify({"error": "Thiếu thông tin đăng nhập!"}), 400
+
+    if find_user(username):
+        return jsonify({"error": "Tên đăng nhập đã tồn tại!"}), 400
+
+    create_user(username, password)
+    return jsonify({"message": "Đăng ký thành công"}), 201
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    """API đăng nhập - chỉ trả về JSON"""
+    data = request.get_json()
+    username = data.get("username") if data else request.form.get("username")
+    password = data.get("password") if data else request.form.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Thiếu thông tin đăng nhập!"}), 400
 
     user = find_user(username)
     if not user:
-        return render_template("login.html", msg="Sai tên đăng nhập hoặc mật khẩu!")
+        return jsonify({"error": "Sai tên đăng nhập hoặc mật khẩu!"}), 401
 
     # Kiểm tra mật khẩu (hash)
     if not check_password(password, user["password"]):
-        return render_template("login.html", msg="Sai mật khẩu!")
+        return jsonify({"error": "Sai mật khẩu!"}), 401
 
     # Tạo JWT token
     token = create_access_token(identity=username, expires_delta=timedelta(hours=1))
@@ -66,7 +64,11 @@ def login_page():
     session["username"] = username
     session["token"] = token
 
-    return render_template("success.html", username=username, token=token)
+    return jsonify({
+        "token": token,
+        "username": username,
+        "message": "Đăng nhập thành công"
+    }), 200
 
 
 # ---------------- API cho Product Service ----------------
@@ -85,4 +87,4 @@ def verify_token():
 
 if __name__ == "__main__":
     register_service()
-    app.run(port=SERVICE_PORT, debug=True)
+    app.run(host="0.0.0.0", port=SERVICE_PORT, debug=True)

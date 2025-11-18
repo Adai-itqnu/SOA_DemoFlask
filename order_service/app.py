@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, session, redirect
+from flask import Flask, jsonify, request, session
 from service_registry import register_service
 from models.order_model import *
 from config import *
@@ -300,30 +300,11 @@ def delete_item_route(item_id):
     return jsonify({"error": "Không tìm thấy mặt hàng"}), 404
 
 
-# ==================== WEB INTERFACE ====================
-
-@app.route("/")
-def home():
-    """Trang chủ hiển thị danh sách đơn hàng"""
-    token = request.args.get("token")
-    username = request.args.get("username")
-    
-    if not token or not username:
-        return "<h3>Thiếu token hoặc username!</h3>", 401
-    
-    # Xác thực token
-    if not verify_token(token):
-        return "<h3>Token không hợp lệ hoặc đã hết hạn!</h3>", 401
-    
-    # Lưu username vào session
-    session["username"] = username
-    
-    # Lấy danh sách đơn hàng
-    orders = get_all_orders(username)
-    
-    return render_template("orders.html", orders=orders, username=username)
+# Frontend đã được tách ra thư mục frontend riêng
+# Các routes render template đã được loại bỏ
+# Frontend gọi API trực tiếp qua Nginx Gateway
 
 
 if __name__ == "__main__":
     register_service()
-    app.run(port=SERVICE_PORT, debug=True)
+    app.run(host="0.0.0.0", port=SERVICE_PORT, debug=True)

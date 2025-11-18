@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - soa_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Consul Service Discovery
+  consul:
+    image: consul:1.17
+    container_name: consul
+    ports:
+      - "8500:8500"
+    command: consul agent -dev -client=0.0.0.0
+    networks:
+      - soa_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service
+  auth_service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/user_db
+      - SERVICE_NAME=auth-service
+      - SERVICE_PORT=5000
+      - JWT_SECRET=mysecretkey
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    depends_on:
+      - mongodb
+      - consul
+    networks:
+      - soa_network
+    restart: unless-stopped
+
+  # Product Service
+  product_service:
+    build:
+      context: ./product_service
+      dockerfile: Dockerfile
+    container_name: product_service
+    ports:
+      - "5001:5001"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/product_db
+      - SERVICE_NAME=product-service
+      - SERVICE_PORT=5001
+      - AUTH_SERVICE_NAME=auth-service
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    depends_on:
+      - mongodb
+      - consul
+      - auth_service
+    networks:
+      - soa_network
+    restart: unless-stopped
+
+  # Order Service
+  order_service:
+    build:
+      context: ./order_service
+      dockerfile: Dockerfile
+    container_name: order_service
+    ports:
+      - "5002:5002"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/order_db
+      - SERVICE_NAME=order-service
+      - SERVICE_PORT=5002
+      - AUTH_SERVICE_NAME=auth-service
+      - PRODUCT_SERVICE_NAME=product-service
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    depends_on:
+      - mongodb
+      - consul
+      - auth_service
+      - product_service
+    networks:
+      - soa_network
+    restart: unless-stopped
+
+  # Report Service
+  report_service:
+    build:
+      context: ./report_service
+      dockerfile: Dockerfile
+    container_name: report_service
+    ports:
+      - "5003:5003"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/report_db
+      - SERVICE_NAME=report-service
+      - SERVICE_PORT=5003
+      - AUTH_SERVICE_NAME=auth-service
+      - PRODUCT_SERVICE_NAME=product-service
+      - ORDER_SERVICE_NAME=order-service
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+    depends_on:
+      - mongodb
+      - consul
+      - auth_service
+      - product_service
+      - order_service
+    networks:
+      - soa_network
+    restart: unless-stopped
+
+  # Nginx API Gateway
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: nginx_gateway
+    ports:
+      - "80:80"
+    environment:
+      - CONSUL_ADDR=consul:8500
+    depends_on:
+      - consul
+      - auth_service
+      - product_service
+      - order_service
+      - report_service
+    networks:
+      - soa_network
+    restart: unless-stopped
+
+networks:
+  soa_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+

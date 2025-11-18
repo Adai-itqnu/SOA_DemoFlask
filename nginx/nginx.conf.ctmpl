@@ -1,0 +1,161 @@
+upstream auth_service {
+    least_conn;
+{{range service "auth-service"}}
+    server {{.Address}}:{{.Port}};
+{{end}}
+}
+
+upstream product_service {
+    least_conn;
+{{range service "product-service"}}
+    server {{.Address}}:{{.Port}};
+{{end}}
+}
+
+upstream order_service {
+    least_conn;
+{{range service "order-service"}}
+    server {{.Address}}:{{.Port}};
+{{end}}
+}
+
+upstream report_service {
+    least_conn;
+{{range service "report-service"}}
+    server {{.Address}}:{{.Port}};
+{{end}}
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Logging
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    # Increase body size for file uploads
+    client_max_body_size 10M;
+
+    # Root directory for static files (frontend)
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Serve frontend static files (JS, CSS, images)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Serve frontend HTML files
+    location ~ ^/(index|login|register|admin)\.html$ {
+        try_files $uri =404;
+    }
+
+    # ==================== AUTH SERVICE ====================
+    location /auth/ {
+        proxy_pass http://auth_service/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /register {
+        proxy_pass http://auth_service/register;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Content-Type $content_type;
+    }
+
+    location /login {
+        proxy_pass http://auth_service/login;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Content-Type $content_type;
+    }
+
+    # ==================== PRODUCT SERVICE ====================
+    location /products {
+        proxy_pass http://product_service/products;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    location /products/ {
+        proxy_pass http://product_service/products/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    # ==================== ORDER SERVICE ====================
+    location /orders {
+        proxy_pass http://order_service/orders;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    location /orders/ {
+        proxy_pass http://order_service/orders/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    location /order_items {
+        proxy_pass http://order_service/order_items;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    location /order_items/ {
+        proxy_pass http://order_service/order_items/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    # ==================== REPORT SERVICE ====================
+    location /reports/ {
+        proxy_pass http://report_service/reports/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Default location - serve frontend index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+

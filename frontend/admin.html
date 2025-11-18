@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Quản Lý</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">🛍️ Admin Panel</h1>
+            <div class="nav-links">
+                <span id="adminInfo"></span>
+                <button class="btn btn-secondary" onclick="logout()">Đăng Xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="admin-tabs">
+            <button class="tab-btn active" onclick="switchTab('products')">Quản Lý Sản Phẩm</button>
+            <button class="tab-btn" onclick="switchTab('orders')">Quản Lý Đơn Hàng</button>
+            <button class="tab-btn" onclick="switchTab('reports')">Báo Cáo & Thống Kê</button>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="productsTab" class="tab-content active">
+            <div class="page-header">
+                <h2>Quản Lý Sản Phẩm</h2>
+                <button class="btn btn-primary" onclick="showAddProductModal()">+ Thêm Sản Phẩm</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th>Mô Tả</th>
+                            <th>Giá</th>
+                            <th>Số Lượng</th>
+                            <th>Cập Nhật</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Orders Tab -->
+        <div id="ordersTab" class="tab-content">
+            <div class="page-header">
+                <h2>Quản Lý Đơn Hàng</h2>
+                <button class="btn btn-primary" onclick="showAddOrderModal()">+ Tạo Đơn Hàng</button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách Hàng</th>
+                            <th>Email</th>
+                            <th>Tổng Tiền</th>
+                            <th>Trạng Thái</th>
+                            <th>Ngày Tạo</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reportsTab" class="tab-content">
+            <div class="page-header">
+                <h2>Báo Cáo & Thống Kê</h2>
+                <button class="btn btn-primary" onclick="generateOrderReport()">Tạo Báo Cáo Đơn Hàng</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Doanh Thu Tổng</h3>
+                    <p id="totalRevenue" class="stat-value">0 ₫</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Tổng Chi Phí</h3>
+                    <p id="totalCost" class="stat-value">0 ₫</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Lợi Nhuận</h3>
+                    <p id="totalProfit" class="stat-value profit">0 ₫</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Số Đơn Hàng</h3>
+                    <p id="totalOrders" class="stat-value">0</p>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h3>Báo Cáo Đơn Hàng</h3>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Order ID</th>
+                            <th>Doanh Thu</th>
+                            <th>Chi Phí</th>
+                            <th>Lợi Nhuận</th>
+                            <th>Ngày Tạo</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderReportsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-header">
+                <h3>Báo Cáo Sản Phẩm</h3>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Product ID</th>
+                            <th>Số Lượng Bán</th>
+                            <th>Doanh Thu</th>
+                            <th>Chi Phí</th>
+                            <th>Lợi Nhuận</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productReportsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addProductModal')">&times;</span>
+            <h2>Thêm Sản Phẩm Mới</h2>
+            <form onsubmit="addProduct(event)">
+                <div class="form-group">
+                    <label>ID</label>
+                    <input type="number" id="productId" required>
+                </div>
+                <div class="form-group">
+                    <label>Tên Sản Phẩm</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Mô Tả</label>
+                    <textarea id="productDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Giá</label>
+                    <input type="number" id="productPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Số Lượng</label>
+                    <input type="number" id="productQuantity" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Thêm</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editProductModal')">&times;</span>
+            <h2>Sửa Sản Phẩm</h2>
+            <form onsubmit="updateProduct(event)">
+                <input type="hidden" id="editProductId">
+                <div class="form-group">
+                    <label>Tên Sản Phẩm</label>
+                    <input type="text" id="editProductName" required>
+                </div>
+                <div class="form-group">
+                    <label>Mô Tả</label>
+                    <textarea id="editProductDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Giá</label>
+                    <input type="number" id="editProductPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Số Lượng</label>
+                    <input type="number" id="editProductQuantity" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Cập Nhật</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addOrderModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addOrderModal')">&times;</span>
+            <h2>Tạo Đơn Hàng Mới</h2>
+            <form onsubmit="addOrder(event)">
+                <div class="form-group">
+                    <label>Order ID</label>
+                    <input type="number" id="orderId" required>
+                </div>
+                <div class="form-group">
+                    <label>Tên Khách Hàng</label>
+                    <input type="text" id="orderCustomerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="orderCustomerEmail" required>
+                </div>
+                <div id="orderItems">
+                    <h3>Danh Sách Sản Phẩm</h3>
+                    <div id="orderItemsList"></div>
+                    <button type="button" class="btn btn-secondary" onclick="addOrderItem()">+ Thêm Sản Phẩm</button>
+                </div>
+                <button type="submit" class="btn btn-primary">Tạo Đơn Hàng</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
+
