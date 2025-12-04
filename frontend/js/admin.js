@@ -203,101 +203,77 @@ function displayOrdersTable(orders) {
             <td>${order.created_at ? new Date(order.created_at).toLocaleString('vi-VN') : '-'}</td>
             <td>
                 <button class="btn btn-primary" onclick="viewOrderDetails(${order.id})">Xem</button>
+                <button class="btn btn-secondary" onclick="showUpdateStatusModal(${order.id}, '${order.status}')">Cập Nhật TT</button>
                 <button class="btn btn-danger" onclick="deleteOrderConfirm(${order.id})">Xóa</button>
             </td>
         </tr>
     `).join('');
 }
 
-function showAddOrderModal() {
-    orderItemCounter = 0;
-    document.getElementById('orderItemsList').innerHTML = '';
-    document.getElementById('addOrderModal').style.display = 'block';
+function showUpdateStatusModal(orderId, currentStatus) {
+    document.getElementById('statusOrderId').value = orderId;
+    document.getElementById('newStatus').value = currentStatus;
+    document.getElementById('updateStatusModal').style.display = 'block';
 }
 
-function addOrderItem() {
-    orderItemCounter++;
-    const itemsList = document.getElementById('orderItemsList');
-    const itemHtml = `
-        <div class="order-item" id="orderItem_${orderItemCounter}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;">
-            <button type="button" class="btn btn-danger" onclick="removeOrderItem(${orderItemCounter})" style="float: right;">Xóa</button>
-            <div class="form-group">
-                <label>Chọn Sản Phẩm</label>
-                <select id="itemProduct_${orderItemCounter}" class="form-control" required>
-                    <option value="">-- Chọn sản phẩm --</option>
-                    ${allProductsForOrder.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)} ₫</option>`).join('')}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Số Lượng</label>
-                <input type="number" id="itemQuantity_${orderItemCounter}" min="1" required>
-            </div>
-        </div>
-    `;
-    itemsList.insertAdjacentHTML('beforeend', itemHtml);
-}
-
-function removeOrderItem(id) {
-    document.getElementById(`orderItem_${id}`).remove();
-}
-
-async function addOrder(event) {
+async function updateOrderStatus(event) {
     event.preventDefault();
-    
-    const orderId = parseInt(document.getElementById('orderId').value);
-    const customerName = document.getElementById('orderCustomerName').value;
-    const customerEmail = document.getElementById('orderCustomerEmail').value;
-
-    // Collect order items
-    const items = [];
-    let itemIndex = 1;
-    while (document.getElementById(`orderItem_${itemIndex}`)) {
-        const productId = document.getElementById(`itemProduct_${itemIndex}`);
-        const quantity = document.getElementById(`itemQuantity_${itemIndex}`);
-        
-        if (productId && productId.value && quantity && quantity.value) {
-            const product = allProductsForOrder.find(p => p.id === parseInt(productId.value));
-            items.push({
-                id: itemIndex,
-                order_id: orderId,
-                product_id: parseInt(productId.value),
-                product_name: product.name,
-                quantity: parseInt(quantity.value),
-                unit_price: product.price
-            });
-        }
-        itemIndex++;
-    }
-
-    if (items.length === 0) {
-        alert('Vui lòng thêm ít nhất một sản phẩm');
-        return;
-    }
-
-    const order = {
-        id: orderId,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        items: items
-    };
+    const orderId = document.getElementById('statusOrderId').value;
+    const newStatus = document.getElementById('newStatus').value;
 
     try {
-        await ordersAPI.create(order);
-        closeModal('addOrderModal');
+        await ordersAPI.update(orderId, { status: newStatus });
+        closeModal('updateStatusModal');
         await loadOrders();
-        // Reset form
-        document.getElementById('addOrderModal').querySelector('form').reset();
-        document.getElementById('orderItemsList').innerHTML = '';
-        orderItemCounter = 0;
+        alert('Cập nhật trạng thái thành công!');
     } catch (error) {
-        alert('Lỗi tạo đơn hàng: ' + error.message);
+        alert('Lỗi cập nhật trạng thái: ' + error.message);
     }
 }
 
 async function viewOrderDetails(orderId) {
     try {
         const order = await ordersAPI.getById(orderId);
-        alert(`Chi tiết đơn hàng:\n\nID: ${order.id}\nKhách hàng: ${order.customer_name}\nEmail: ${order.customer_email}\nTổng tiền: ${formatPrice(order.total_amount)} ₫\nTrạng thái: ${order.status}`);
+        const modal = document.getElementById('orderDetailsModal');
+        const content = document.getElementById('orderDetailsContent');
+        
+        content.innerHTML = `
+            <p><strong>ID:</strong> ${order.id}</p>
+            <p><strong>Khách hàng:</strong> ${order.customer_name}</p>
+            <p><strong>Email:</strong> ${order.customer_email}</p>
+            <p><strong>Ngày tạo:</strong> ${new Date(order.created_at).toLocaleString('vi-VN')}</p>
+            <p><strong>Trạng thái:</strong> <span class="status-badge ${order.status}">${order.status}</span></p>
+            <hr>
+            <h3>Sản phẩm:</h3>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đơn giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${order.items ? order.items.map(item => `
+                        <tr>
+                            <td>${item.product_name}</td>
+                            <td>${formatPrice(item.unit_price)} ₫</td>
+                            <td>${item.quantity}</td>
+                            <td>${formatPrice(item.unit_price * item.quantity)} ₫</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="4">Không có sản phẩm</td></tr>'}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="text-align: right; font-weight: bold;">Tổng cộng:</td>
+                        <td style="font-weight: bold;">${formatPrice(order.total_amount)} ₫</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+        
+        modal.style.display = 'block';
     } catch (error) {
         alert('Lỗi tải chi tiết đơn hàng: ' + error.message);
     }

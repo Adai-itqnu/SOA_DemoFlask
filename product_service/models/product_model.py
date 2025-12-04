@@ -39,22 +39,6 @@ def update_product(pid, data, username):
     update_data = {
         "updated_at": now
     }
-
-    # chỉ cập nhật các field có trong data
-    for field in ["name", "description", "price", "quantity"]:
-        if field in data:
-            update_data[field] = data[field]
-
-    result = collection.update_one(
-        {"id": pid, "owner": username},
-        {"$set": update_data}
-    )
-    return result.modified_count > 0
-
-
-# DELETE
-def delete_product(pid):
-    result = collection.delete_one({"id": pid})
     return result.deleted_count > 0
 
 # ---- READ ----

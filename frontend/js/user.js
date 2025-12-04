@@ -67,6 +67,9 @@ function displayProducts(products) {
             <p class="price">${formatPrice(product.price)} ₫</p>
             <p class="quantity">Còn lại: ${product.quantity} sản phẩm</p>
             ${product.description ? `<p class="description">${product.description}</p>` : ''}
+            <button class="btn btn-primary" onclick="addToCart(allProducts.find(p => p.id === ${product.id}))" ${product.quantity <= 0 ? 'disabled' : ''} style="width: 100%; margin-top: 10px;">
+                ${product.quantity > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+            </button>
         </div>
     `).join('');
 }

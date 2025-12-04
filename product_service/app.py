@@ -56,10 +56,20 @@ def update_product_route(pid):
         return jsonify({"error": "Thiếu dữ liệu JSON"}), 400
 
     username = session["username"]
+    
+    # Thử cập nhật thông thường (check owner)
     updated = update_product(pid, data, username)
+    
     if updated:
         return jsonify({"message": "Cập nhật sản phẩm thành công"}), 200
-    return jsonify({"error": "Không tìm thấy sản phẩm"}), 404
+        
+    # Nếu không cập nhật được, check xem có phải chỉ update quantity không (cho phép người mua update)
+    # Hoặc nếu data chỉ có quantity
+    if "quantity" in data and len(data) == 1:
+         if update_product_quantity(pid, data["quantity"]):
+             return jsonify({"message": "Cập nhật số lượng thành công"}), 200
+    
+    return jsonify({"error": "Không tìm thấy sản phẩm hoặc không có quyền"}), 404
 
 
 @app.route("/products/<int:pid>", methods=["PUT"])
